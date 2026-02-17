@@ -1,9 +1,37 @@
-- name: 自动提交更新后的m3u文件
-  run: |
-    git config --global user.name "GitHub Actions"
-    git config --global user.email "actions@github.com"
-    git add migufootball.m3u
-    git commit -m "🚀 自动更新咪咕足球m3u节目单-$(date +%Y%m%d)" || echo "无更改，跳过提交"
-    git push
-  env:
-    GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+name: 咪咕足球通m3u自动更新
+on:
+  schedule:
+    - cron: '0 16 * * *'  # 每日北京时间0点（UTC 16点）
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖库
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 运行脚本生成m3u
+        run: python main.py
+
+      - name: 自动提交更新后的m3u文件
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add migufootball.m3u
+          git commit -m "🚀 自动更新咪咕足球m3u节目单-$(date +%Y%m%d)" || echo "无更改，跳过提交"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
