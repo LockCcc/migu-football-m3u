@@ -1,0 +1,37 @@
+name: 咪咕足球通m3u自动更新
+on:
+  schedule:
+    - cron: '0 16 * * *'  # 每日凌晨0点（GitHub是UTC时间，UTC16点=北京时间0点）
+  workflow_dispatch:  # 手动触发（仓库页面可点击运行）
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 使用GitHub免费ubuntu服务器
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史记录，方便提交
+
+      - name: 配置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  # 稳定版Python，无需修改
+
+      - name: 安装依赖库
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 运行脚本生成m3u
+        run: python main.py
+
+      - name: 自动提交更新后的m3u文件
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add migufootball.m3u
+          git commit -m "🚀 自动更新咪咕足球m3u节目单-$(date +%Y%m%d)"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub自动生成，无需手动配置
