@@ -12,9 +12,9 @@ COOKIES = {
 # rateType：7=原画HDR，4=蓝光1080P，3=高清720P（根据会员权限选）
 FOOTBALL_CHANNELS = {
     "亚冠精英-上海申花": {"contId": "963063316", "rateType": 7},
-    "英超直播": {"contId": "替换成英超的contId", "rateType": 7},
-    "中超直播": {"contId": "替换成中超的contId", "rateType": 7},
-    "欧冠直播": {"contId": "替换成欧冠的contId", "rateType": 7},
+    # "英超直播": {"contId": "替换成英超的contId", "rateType": 7},
+    # "中超直播": {"contId": "替换成中超的contId", "rateType": 7},
+    # "欧冠直播": {"contId": "替换成欧冠的contId", "rateType": 7},
     # 按需添加更多足球频道
 }
 # 3. 咪咕播放地址接口模板（无需修改）
@@ -43,6 +43,9 @@ def get_migu_m3u8(contId, rateType):
         resp.raise_for_status()
         data = resp.json()
         
+        # 打印接口返回，方便调试
+        print(f"接口返回: {json.dumps(data, indent=2, ensure_ascii=False)}")
+        
         # 提取m3u8地址（兼容接口返回格式，优先取urlInfo，无则取urlInfos第一个）
         if data.get("code") == "200" and data.get("body", {}).get("urlInfo", {}).get("url"):
             m3u8_url = data["body"]["urlInfo"]["url"]
@@ -66,16 +69,21 @@ def generate_m3u():
     """生成OK影视兼容的m3u节目单"""
     m3u_content = ["#EXTM3U"]  # m3u标准头
     for channel_name, config in FOOTBALL_CHANNELS.items():
-        m3u8_url = get_migu_m3u8(config["contId"], config["rateType"])
-        if m3u8_url:
-            # 拼接m3u条目（OK影视识别：tvg-name=频道名，group-title=分类，最后是播放地址）
-            m3u_content.append(f'#EXTINF:-1 tvg-name="{channel_name}" group-title="咪咕足球通",{channel_name}')
-            m3u_content.append(m3u8_url)
-            print(f"✅ 成功添加：{channel_name}")
-        else:
-            m3u_content.append(f'#EXTINF:-1 tvg-name="{channel_name}" group-title="咪咕足球通",{channel_name}（暂无法播放）')
+        try:
+            m3u8_url = get_migu_m3u8(config["contId"], config["rateType"])
+            if m3u8_url:
+                # 拼接m3u条目（OK影视识别：tvg-name=频道名，group-title=分类，最后是播放地址）
+                m3u_content.append(f'#EXTINF:-1 tvg-name="{channel_name}" group-title="咪咕足球通",{channel_name}')
+                m3u_content.append(m3u8_url)
+                print(f"✅ 成功添加：{channel_name}")
+            else:
+                m3u_content.append(f'#EXTINF:-1 tvg-name="{channel_name}" group-title="咪咕足球通",{channel_name}（暂无法播放）')
+                m3u_content.append("#")
+                print(f"❌ 失败添加：{channel_name}")
+        except Exception as e:
+            print(f"处理频道 {channel_name} 时发生异常: {e}")
+            m3u_content.append(f'#EXTINF:-1 tvg-name="{channel_name}" group-title="咪咕足球通",{channel_name}（处理异常）')
             m3u_content.append("#")
-            print(f"❌ 失败添加：{channel_name}")
     
     # 将内容写入m3u文件（仓库根目录，方便Pages访问）
     with open("migufootball.m3u", "w", encoding="utf-8") as f:
@@ -83,4 +91,10 @@ def generate_m3u():
     print("📄 m3u节目单生成完成！")
 
 if __name__ == "__main__":
-    generate_m3u()
+    try:
+        generate_m3u()
+    except Exception as e:
+        print(f"脚本执行异常: {e}")
+        # 即使出错也生成一个空的或部分内容的 m3u，保证 Git 提交能完成
+        with open("migufootball.m3u", "w", encoding="utf-8") as f:
+            f.write("#EXTM3U\n# 自动更新失败，请检查脚本")
