@@ -5,7 +5,7 @@ import time
 # -------------------------- 配置区（替换成你自己的信息！）--------------------------
 # 1. 你的咪咕登录Cookie（抓包获取，至少包含UserInfo，确保能访问足球通）
 COOKIES = {
-    "UserInfo": "1717839030|nlpsCFB4CF4687FE98FBE2B6",  # 替换成你最新的有效Cookie
+    "UserInfo": "1717839030|nlps931311EEB280BB3291D1",  # 替换成你最新的有效Cookie
     # 若抓包有其他Cookie（如msid、token等），全部加在这里，用逗号分隔
 }
 # 2. 咪咕足球频道配置（批量添加，格式：{"频道名": "contId", "清晰度": rateType}）
